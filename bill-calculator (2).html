@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mayapuri Electricity Bill Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --teal:#0E7C7B;
+    --teal-dark:#0A5F5E;
+    --teal-light:#E6F4F3;
+    --ink:#1F2937;
+    --ink-soft:#4B5563;
+    --bg:#FFFFFF;
+    --card:#FFFFFF;
+    --card-border:#E5E7EB;
+    --panel:#F7F9F9;
+    --red:#C0392B;
+    --red-bg:#FDECEA;
+    --green:#1E7A4C;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{
+    padding:20px 16px 60px;
+  }
+  .wrap{
+    max-width:720px;
+    margin:0 auto;
+  }
+  header.top{
+    text-align:center;
+    margin-bottom:24px;
+  }
+  header.top .bolt{
+    font-size:40px;
+    line-height:1;
+  }
+  header.top h1{
+    font-size:26px;
+    margin:8px 0 4px;
+    color:var(--teal-dark);
+    letter-spacing:0.2px;
+  }
+  header.top p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:16px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:var(--radius);
+    padding:20px 18px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(16,24,40,0.04);
+  }
+  .card h2{
+    font-size:20px;
+    margin:0 0 14px;
+    color:var(--teal-dark);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .num{
+    background:var(--teal);
+    color:#fff;
+    width:28px;height:28px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;justify-content:center;
+    font-size:14px;
+    flex:none;
+  }
+  label{
+    display:block;
+    font-size:16px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  input[type=number], input[type=text]{
+    width:100%;
+    font-size:22px;
+    padding:14px 14px;
+    border-radius:12px;
+    border:2px solid var(--card-border);
+    background:#fff;
+    color:var(--ink);
+    margin-bottom:14px;
+    -moz-appearance:textfield;
+  }
+  input[type=number]:focus, input[type=text]:focus{
+    outline:none;
+    border-color:var(--teal);
+  }
+  input.error{
+    border-color:var(--red);
+    background:var(--red-bg);
+  }
+  .error-msg{
+    color:var(--red);
+    font-size:15px;
+    margin:-10px 0 14px;
+    font-weight:600;
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .result-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    background:var(--teal-light);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-top:4px;
+  }
+  .result-line .label{
+    font-size:17px;
+    color:var(--teal-dark);
+    font-weight:600;
+  }
+  .result-line .value{
+    font-size:24px;
+    font-weight:800;
+    color:var(--teal-dark);
+  }
+  .flat-card{
+    background:var(--panel);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:14px;
+    border:1px solid var(--card-border);
+  }
+  .flat-card h3{
+    margin:0 0 10px;
+    font-size:18px;
+    color:var(--ink);
+  }
+  .flat-units{
+    text-align:right;
+    font-size:16px;
+    color:var(--teal-dark);
+    font-weight:700;
+  }
+  .flat-bill{
+    text-align:right;
+    font-size:16px;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-top:2px;
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 4px;
+    border-bottom:1px solid var(--card-border);
+    font-size:20px;
+  }
+  .checkbox-row:last-child{border-bottom:none;}
+  .checkbox-row input[type=checkbox]{
+    width:30px;height:30px;
+    accent-color:var(--teal);
+    flex:none;
+  }
+  .rate-input-wrap{
+    position:relative;
+  }
+  .rate-input-wrap .rupee{
+    position:absolute;
+    left:16px;top:50%;
+    transform:translateY(-50%);
+    font-size:22px;
+    color:var(--ink-soft);
+  }
+  .rate-input-wrap input{
+    padding-left:38px;
+  }
+  .big-result{
+    text-align:center;
+    padding:18px;
+    background:var(--teal);
+    color:#fff;
+    border-radius:14px;
+    margin-top:6px;
+  }
+  .big-result .label{
+    font-size:17px;
+    opacity:0.9;
+    font-weight:600;
+  }
+  .big-result .value{
+    font-size:34px;
+    font-weight:800;
+    margin-top:4px;
+  }
+  .warn-box{
+    background:var(--red-bg);
+    color:var(--red);
+    border-radius:12px;
+    padding:16px;
+    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    margin-top:6px;
+  }
+  #summaryCard{
+    background:var(--teal-dark);
+    color:#fff;
+    border:none;
+  }
+  #summaryCard h2{color:#fff;}
+  #summaryCard h2 .num{background:#fff;color:var(--teal-dark);}
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.2);
+    font-size:17px;
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .label{opacity:0.9;}
+  .summary-row .value{font-weight:800;font-size:19px;}
+  .summary-final{
+    margin-top:10px;
+    text-align:center;
+    background:rgba(255,255,255,0.12);
+    border-radius:12px;
+    padding:16px;
+  }
+  .summary-final .label{font-size:16px;opacity:0.9;}
+  .summary-final .value{font-size:32px;font-weight:800;}
+
+  .btn-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:12px;
+    margin-top:8px;
+  }
+  button{
+    font-size:18px;
+    font-weight:700;
+    padding:18px 8px;
+    border-radius:14px;
+    border:none;
+    cursor:pointer;
+  }
+  #clearBtn{
+    background:#fff;
+    color:var(--red);
+    border:2px solid var(--red);
+  }
+  #printBtn{
+    background:#fff;
+    color:var(--teal-dark);
+    border:2px solid var(--teal);
+  }
+  #pdfBtn{
+    background:var(--teal);
+    color:#fff;
+  }
+  button:active{transform:scale(0.98);}
+
+  @media (max-width:480px){
+    .row2{grid-template-columns:1fr;}
+    header.top h1{font-size:22px;}
+    .btn-row{grid-template-columns:1fr;}
+  }
+
+  @media print{
+    .btn-row{display:none;}
+    body{padding:0;}
+    .card{box-shadow:none;border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="bolt">⚡ 💧</div>
+    <h1>Mayapuri Electricity Bill Calculator</h1>
+    <p>Common Area Electricity & Water — 6 Flats</p>
+  </header>
+
+  <!-- Section 1: Main Meter -->
+  <div class="card">
+    <h2><span class="num">1</span>Main Meter Reading</h2>
+    <label for="mainLast">Last Month Reading</label>
+    <input type="number" inputmode="decimal" step="any" id="mainLast" placeholder="e.g. 10500">
+    <label for="mainCurr">Current Month Reading</label>
+    <input type="number" inputmode="decimal" step="any" id="mainCurr" placeholder="e.g. 11200">
+    <div id="mainError" class="error-msg" style="display:none;">Current reading cannot be less than last reading.</div>
+    <div class="result-line">
+      <span class="label">Main Meter Units</span>
+      <span class="value" id="mainUnits">0</span>
+    </div>
+  </div>
+
+  <!-- Section 2: Flat Meters -->
+  <div class="card">
+    <h2><span class="num">2</span>Flat Meter Readings</h2>
+    <div id="flatsContainer"></div>
+    <div class="result-line">
+      <span class="label">Total Flat Units</span>
+      <span class="value" id="totalFlatUnits">0</span>
+    </div>
+  </div>
+
+  <!-- Section 3: Common Units -->
+  <div class="card">
+    <h2><span class="num">3</span>Common Electricity (Water Motor)</h2>
+    <div class="result-line">
+      <span class="label">Common Units</span>
+      <span class="value" id="commonUnits">0</span>
+    </div>
+  </div>
+
+  <!-- Section 4: Cost -->
+  <div class="card">
+    <h2><span class="num">4</span>Electricity Cost</h2>
+    <label for="rate">Rate Per Unit (₹)</label>
+    <div class="rate-input-wrap">
+      <span class="rupee">₹</span>
+      <input type="number" inputmode="decimal" step="any" id="rate" value="8.5">
+    </div>
+    <div class="big-result">
+      <div class="label">Total Common Electricity Cost</div>
+      <div class="value" id="totalCost">₹0</div>
+    </div>
+  </div>
+
+  <!-- Section 5: Occupied Flats -->
+  <div class="card">
+    <h2><span class="num">5</span>Occupied Flats</h2>
+    <div id="checkboxContainer"></div>
+    <div class="result-line" style="margin-top:14px;">
+      <span class="label">Occupied Flats</span>
+      <span class="value" id="occupiedCount">0</span>
+    </div>
+  </div>
+
+  <!-- Section 6: Per Flat Bill -->
+  <div class="card">
+    <h2><span class="num">6</span>Per Flat Bill</h2>
+    <div id="perFlatOk" class="big-result">
+      <div class="label">Each Occupied Flat Pays</div>
+      <div class="value" id="perFlatValue">₹0</div>
+    </div>
+    <div id="perFlatWarn" class="warn-box" style="display:none;">
+      Please select occupied flats.
+    </div>
+  </div>
+
+  <!-- Section 7: Summary -->
+  <div class="card" id="summaryCard">
+    <h2><span class="num">7</span>Final Summary</h2>
+    <div class="summary-row"><span class="label">Main Meter Units</span><span class="value" id="sMain">0</span></div>
+    <div class="summary-row"><span class="label">Total Flat Units</span><span class="value" id="sFlat">0</span></div>
+    <div class="summary-row"><span class="label">Common Units</span><span class="value" id="sCommon">0</span></div>
+    <div class="summary-row"><span class="label">Rate Per Unit</span><span class="value" id="sRate">₹8.50</span></div>
+    <div class="summary-row"><span class="label">Total Common Electricity Cost</span><span class="value" id="sCost">₹0</span></div>
+    <div class="summary-row"><span class="label">Occupied Flats</span><span class="value" id="sOcc">0</span></div>
+    <div class="summary-final">
+      <div class="label">Each Occupied Flat Pays</div>
+      <div class="value" id="sPerFlat">₹0</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="clearBtn">Clear All</button>
+    <button id="printBtn">Print</button>
+    <button id="pdfBtn">Download PDF</button>
+  </div>
+
+</div>
+
+<script>
+const FLAT_COUNT = 6;
+
+// Build flat meter cards
+const flatsContainer = document.getElementById('flatsContainer');
+for(let i=1;i<=FLAT_COUNT;i++){
+  const div = document.createElement('div');
+  div.className = 'flat-card';
+  div.innerHTML = `
+    <h3>Flat ${i}</h3>
+    <label>Last Month Reading</label>
+    <input type="number" inputmode="decimal" step="any" id="flat${i}Last" placeholder="e.g. 1200">
+    <label>Current Month Reading</label>
+    <input type="number" inputmode="decimal" step="any" id="flat${i}Curr" placeholder="e.g. 1350">
+    <div class="error-msg" id="flat${i}Error" style="display:none;">Current reading cannot be less than last reading.</div>
+    <div class="flat-units">Flat ${i} Units: <span id="flat${i}Units">0</span></div>
+    <div class="flat-bill">Flat ${i} Bill: <span id="flat${i}Bill">₹0</span></div>
+  `;
+  flatsContainer.appendChild(div);
+}
+
+// Build occupied checkboxes
+const checkboxContainer = document.getElementById('checkboxContainer');
+for(let i=1;i<=FLAT_COUNT;i++){
+  const div = document.createElement('div');
+  div.className = 'checkbox-row';
+  div.innerHTML = `
+    <input type="checkbox" id="occ${i}">
+    <label style="margin:0;font-weight:600;" for="occ${i}">Flat ${i} Occupied</label>
+  `;
+  checkboxContainer.appendChild(div);
+}
+
+function num(id){
+  const v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? 0 : v;
+}
+
+function fmt(n){
+  // trims trailing .00 but keeps decimals if present
+  return Number(n.toFixed(2)).toString();
+}
+
+function fmtMoney(n){
+  return '₹' + Number(n.toFixed(2)).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function calculate(){
+  // Main meter
+  const mainLastEl = document.getElementById('mainLast');
+  const mainCurrEl = document.getElementById('mainCurr');
+  const mainLast = num('mainLast');
+  const mainCurr = num('mainCurr');
+  let mainUnits = 0;
+  const mainError = document.getElementById('mainError');
+  if(mainCurrEl.value !== '' && mainLastEl.value !== '' && mainCurr < mainLast){
+    mainError.style.display='block';
+    mainCurrEl.classList.add('error');
+    mainUnits = 0;
+  } else {
+    mainError.style.display='none';
+    mainCurrEl.classList.remove('error');
+    mainUnits = Math.max(mainCurr - mainLast, 0);
+  }
+  document.getElementById('mainUnits').textContent = fmt(mainUnits);
+
+  // Rate (needed early so each flat card can show its own bill)
+  const rate = num('rate');
+
+  // Flats
+  let totalFlatUnits = 0;
+  let anyFlatError = false;
+  for(let i=1;i<=FLAT_COUNT;i++){
+    const lastEl = document.getElementById(`flat${i}Last`);
+    const currEl = document.getElementById(`flat${i}Curr`);
+    const errEl = document.getElementById(`flat${i}Error`);
+    const last = num(`flat${i}Last`);
+    const curr = num(`flat${i}Curr`);
+    let units = 0;
+    if(currEl.value !== '' && lastEl.value !== '' && curr < last){
+      errEl.style.display = 'block';
+      currEl.classList.add('error');
+      anyFlatError = true;
+      units = 0;
+    } else {
+      errEl.style.display = 'none';
+      currEl.classList.remove('error');
+      units = Math.max(curr - last, 0);
+    }
+    document.getElementById(`flat${i}Units`).textContent = fmt(units);
+    document.getElementById(`flat${i}Bill`).textContent = fmtMoney(units * rate);
+    totalFlatUnits += units;
+  }
+  document.getElementById('totalFlatUnits').textContent = fmt(totalFlatUnits);
+
+  // Common units
+  const commonUnits = mainUnits - totalFlatUnits;
+  document.getElementById('commonUnits').textContent = fmt(commonUnits);
+
+  // Cost
+  const totalCost = commonUnits * rate;
+  document.getElementById('totalCost').textContent = fmtMoney(totalCost);
+
+  // Occupied count
+  let occupiedCount = 0;
+  for(let i=1;i<=FLAT_COUNT;i++){
+    if(document.getElementById(`occ${i}`).checked) occupiedCount++;
+  }
+  document.getElementById('occupiedCount').textContent = occupiedCount;
+
+  // Per flat
+  const perFlatOk = document.getElementById('perFlatOk');
+  const perFlatWarn = document.getElementById('perFlatWarn');
+  let perFlat = 0;
+  if(occupiedCount === 0){
+    perFlatOk.style.display = 'none';
+    perFlatWarn.style.display = 'block';
+  } else {
+    perFlat = totalCost / occupiedCount;
+    perFlatOk.style.display = 'block';
+    perFlatWarn.style.display = 'none';
+    document.getElementById('perFlatValue').textContent = fmtMoney(perFlat);
+  }
+
+  // Summary
+  document.getElementById('sMain').textContent = fmt(mainUnits);
+  document.getElementById('sFlat').textContent = fmt(totalFlatUnits);
+  document.getElementById('sCommon').textContent = fmt(commonUnits);
+  document.getElementById('sRate').textContent = fmtMoney(rate);
+  document.getElementById('sCost').textContent = fmtMoney(totalCost);
+  document.getElementById('sOcc').textContent = occupiedCount;
+  document.getElementById('sPerFlat').textContent = occupiedCount === 0 ? '—' : fmtMoney(perFlat);
+}
+
+// Attach listeners
+document.addEventListener('input', calculate);
+document.addEventListener('change', calculate);
+
+// Clear All
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if(!confirm('Clear all entered data?')) return;
+  document.querySelectorAll('input[type=number]').forEach(el => el.value = '');
+  document.getElementById('rate').value = '8.5';
+  document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+  calculate();
+});
+
+// Print
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+// Download PDF
+document.getElementById('pdfBtn').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(18);
+  doc.text('Building Electricity & Water Bill', 14, y); y+=10;
+  doc.setFontSize(12);
+  const lines = [
+    ['Main Meter Units', document.getElementById('sMain').textContent],
+    ['Total Flat Units', document.getElementById('sFlat').textContent],
+    ['Common Units', document.getElementById('sCommon').textContent],
+    ['Rate Per Unit', document.getElementById('sRate').textContent],
+    ['Total Common Electricity Cost', document.getElementById('sCost').textContent],
+    ['Occupied Flats', document.getElementById('sOcc').textContent],
+    ['Each Occupied Flat Pays', document.getElementById('sPerFlat').textContent],
+  ];
+  y += 4;
+  lines.forEach(([label, value]) => {
+    doc.text(`${label}:`, 14, y);
+    doc.text(`${value}`, 120, y);
+    y += 10;
+  });
+  y += 4;
+  doc.setFontSize(14);
+  doc.text('Flat-wise Units', 14, y); y += 8;
+  doc.setFontSize(12);
+  for(let i=1;i<=FLAT_COUNT;i++){
+    const u = document.getElementById(`flat${i}Units`).textContent;
+    doc.text(`Flat ${i}: ${u} units`, 14, y);
+    y += 8;
+  }
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mon = monthNames[today.getMonth()];
+  const yyyy = today.getFullYear();
+  const fileName = `${dd}-${mon}-${yyyy}-Electricity-Bill.pdf`;
+  doc.save(fileName);
+});
+
+// Initial calculation
+calculate();
+</script>
+</body>
+</html>
